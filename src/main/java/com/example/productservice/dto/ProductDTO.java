@@ -17,5 +17,5 @@ public class ProductDTO {
     private String category;
     private BigDecimal price;
     private Integer availableStock;
-    private LocalDateTime lastUpdated;
+    private String lastUpdated;
 }
