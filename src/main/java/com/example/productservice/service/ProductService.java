@@ -1,14 +1,16 @@
 package com.example.productservice.service;
 
-import com.example.productservice.dto.ProductDTO;
+
 import com.example.productservice.entity.Product;
-import com.example.productservice.exception.ResourceNotFoundException;
-import com.example.productservice.pubsub.PubSubPublisher;
+import com.example.productservice.dto.ProductRequest;
+import com.example.productservice.dto.ProductResponse;
+import com.example.productservice.event.EventPublisher;
+import com.example.productservice.event.ProductEvent;
 import com.example.productservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -18,61 +20,57 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
-    private final PubSubPublisher pubSubPublisher;
+    private final EventPublisher eventPublisher;
 
-    public ProductDTO createProduct(ProductDTO dto) {
-        Product product = Product.builder()
-                .name(dto.getName())
-                .description(dto.getDescription())
-                .category(dto.getCategory())
-                .price(dto.getPrice())
-                .availableStock(dto.getAvailableStock())
-                .lastUpdated(LocalDateTime.now())
-                .build();
+    public ProductResponse createProduct(ProductRequest request) {
+        Product product = new Product();
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setCategory(request.getCategory());
+        product.setPrice(request.getPrice());
+        product.setAvailableStock(request.getAvailableStock());
+        product.setLastUpdated(Instant.now().toString());
 
         Product saved = productRepository.save(product);
-      pubSubPublisher.publishProductEvent(saved, "PRODUCT_CREATED");
-        return mapToDTO(saved);
+        eventPublisher.publishEvent(new ProductEvent("PRODUCT_CREATED", Instant.now().toString(), saved));
+
+        return mapToResponse(saved);
     }
 
-    public ProductDTO updateProduct(UUID id, ProductDTO dto) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
+    public ProductResponse updateProduct(UUID id, ProductRequest request) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
 
-        product.setName(dto.getName());
-        product.setDescription(dto.getDescription());
-        product.setCategory(dto.getCategory());
-        product.setPrice(dto.getPrice());
-        product.setAvailableStock(dto.getAvailableStock());
-        product.setLastUpdated(LocalDateTime.now());
+        product.setName(request.getName());
+        product.setDescription(request.getDescription());
+        product.setCategory(request.getCategory());
+        product.setPrice(request.getPrice());
+        product.setAvailableStock(request.getAvailableStock());
+        product.setLastUpdated(Instant.now().toString());
 
         Product updated = productRepository.save(product);
-       pubSubPublisher.publishProductEvent(updated, "PRODUCT_UPDATED");
-        return mapToDTO(updated);
+        eventPublisher.publishEvent(new ProductEvent("PRODUCT_UPDATED", Instant.now().toString(), updated));
+
+        return mapToResponse(updated);
     }
 
-    public List<ProductDTO> getAllProducts() {
-        return productRepository.findAll()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public List<ProductResponse> getAllProducts() {
+        return productRepository.findAll().stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    public ProductDTO getProductById(UUID id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + id));
-        return mapToDTO(product);
+    public ProductResponse getProductById(UUID id) {
+        return productRepository.findById(id).map(this::mapToResponse)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
-    private ProductDTO mapToDTO(Product product) {
-        return ProductDTO.builder()
-                .productId(product.getProductId())
-                .name(product.getName())
-                .description(product.getDescription())
-                .category(product.getCategory())
-                .price(product.getPrice())
-                .availableStock(product.getAvailableStock())
-                .lastUpdated(product.getLastUpdated())
-                .build();
+    private ProductResponse mapToResponse(Product product) {
+        ProductResponse response = new ProductResponse();
+        response.setProductId(product.getProductId());
+        response.setName(product.getName());
+        response.setDescription(product.getDescription());
+        response.setCategory(product.getCategory());
+        response.setPrice(product.getPrice());
+        response.setAvailableStock(product.getAvailableStock());
+        response.setLastUpdated(product.getLastUpdated());
+        return response;
     }
 }

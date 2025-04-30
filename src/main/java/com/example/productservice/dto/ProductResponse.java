@@ -1,23 +1,19 @@
-package com.example.productservice.entity;
+package com.example.productservice.dto;
 
-import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Data
-@Getter @Setter
+
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Product {
-
-    @Id
-    @GeneratedValue
+@Data
+public class ProductResponse {
     private UUID productId;
-
     private String name;
     private String description;
     private String category;

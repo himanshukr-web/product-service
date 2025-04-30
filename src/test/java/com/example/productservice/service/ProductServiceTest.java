@@ -1,8 +1,7 @@
 package com.example.productservice.service;
 
-import com.example.productservice.dto.ProductDTO;
+import com.example.productservice.dto.ProductResponse;
 import com.example.productservice.entity.Product;
-import com.example.productservice.pubsub.PubSubPublisher;
 import com.example.productservice.repository.ProductRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -21,8 +20,6 @@ public class ProductServiceTest {
     @Mock
     private ProductRepository productRepository;
 
-    @Mock
-    private PubSubPublisher pubSubPublisher;
 
     @InjectMocks
     private ProductService productService;
@@ -38,9 +35,8 @@ public class ProductServiceTest {
         product.setProductId(id);
         product.setName("Test");
 
-        when(productRepository.findById(id)).thenReturn(Optional.of(product));
 
-        ProductDTO result = productService.getProductById(id);
+        ProductResponse result = productService.getProductById(id);
         assertEquals("Test", result.getName());
     }
 }
